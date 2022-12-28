@@ -85,7 +85,8 @@ data "archive_file" "ping_source" {
 }
 
 resource "aws_lambda_function" "ping" {
-  depends_on       = [aws_cloudwatch_log_group.ping]
+  depends_on = [aws_cloudwatch_log_group.ping]
+
   filename         = data.archive_file.ping_source.output_path
   function_name    = local.lambda_function_name
   handler          = "webping"
@@ -112,7 +113,8 @@ resource "aws_sns_topic" "ping_notification" {
 }
 
 resource "aws_sns_topic_subscription" "email" {
-  count     = var.email == "" ? 0 : 1
+  count = var.email == "" ? 0 : 1
+
   endpoint  = var.email
   protocol  = "email"
   topic_arn = aws_sns_topic.ping_notification.arn
@@ -142,15 +144,27 @@ resource "aws_dynamodb_table" "ping_state" {
   }
 }
 
-#resource "aws_lambda_permission" "allow_cloudwatch" {
-#  action        = "lambda:InvokeFunction"
-#  function_name = aws_lambda_function.ping.function_name
-#  principal     = "events.amazonaws.com"
-#}
+resource "aws_cloudwatch_event_rule" "ping_cron" {
+  count = var.enable_ping_cron ? 1 : 0
 
-#resource "aws_cloudwatch_event_rule" "ping_cron" {}
-#
-#resource "aws_cloudwatch_event_target" "ping_cron" {
-#  arn  = ""
-#  rule = aws_cloudwatch_event_rule.ping_cron.name
-#}
+  name                = "webping-${var.stack_name}-cron"
+  schedule_expression = var.ping_lambda_schedule_expression
+}
+
+resource "aws_cloudwatch_event_target" "ping_cron" {
+  count = var.enable_ping_cron ? 1 : 0
+
+  arn  = aws_lambda_function.ping.arn
+  rule = aws_cloudwatch_event_rule.ping_cron[0].name
+}
+
+resource "aws_lambda_permission" "allow_cloudwatch" {
+  count = var.enable_ping_cron ? 1 : 0
+
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.ping.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.ping_cron[0].arn
+  statement_id  = "AllowExecutionFromEventBridge"
+}
+
