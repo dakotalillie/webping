@@ -11,6 +11,14 @@ terraform {
       version = "~> 4.48"
     }
   }
+
+  backend "s3" {
+    bucket               = "dakotalillie-tfstate"
+    dynamodb_table       = "dakotalillie-tfstate-lock"
+    key                  = "terraform.tfstate"
+    region               = "us-west-1"
+    workspace_key_prefix = "webping"
+  }
 }
 
 provider "aws" {
