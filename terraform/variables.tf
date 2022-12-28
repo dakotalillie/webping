@@ -4,7 +4,8 @@ variable "aws_region" {
 }
 
 variable "email" {
-  description = "The email address to notify when repeated failures are observed"
+  default     = ""
+  description = "The email address to notify when repeated failures are observed. An empty value means no email will be subscribed."
   type        = string
 }
 
@@ -18,8 +19,8 @@ variable "environment" {
   type        = string
 
   validation {
-    condition     = contains(["dev", "prod"], var.environment)
-    error_message = "Must be one of: (dev, prod)."
+    condition     = contains(["dev", "test", "prod"], var.environment)
+    error_message = "Must be one of: (dev, test, prod)."
   }
 }
 

@@ -112,6 +112,7 @@ resource "aws_sns_topic" "ping_notification" {
 }
 
 resource "aws_sns_topic_subscription" "email" {
+  count     = var.email == "" ? 0 : 1
   endpoint  = var.email
   protocol  = "email"
   topic_arn = aws_sns_topic.ping_notification.arn

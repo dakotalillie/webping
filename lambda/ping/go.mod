@@ -1,4 +1,4 @@
-module github.com/dakotalillie/webping
+module ping
 
 go 1.19
 
