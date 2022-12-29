@@ -10,7 +10,12 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           cache: true
-          cache-dependency-path: [e2e-tests/go.sum, lambda/ping/go.sum]
+          cache-dependency-path: e2e-tests/go.sum
+          go-version: '~1.19.4'
+      - uses: actions/setup-go@v3
+        with:
+          cache: true
+          cache-dependency-path: lambda/ping/go.sum
           go-version: '~1.19.4'
       - uses: hashicorp/setup-terraform@v2
         with:
