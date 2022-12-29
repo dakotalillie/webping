@@ -48,7 +48,7 @@ func TestWebping(t *testing.T) {
 	defer terraform.Destroy(t, terraformOptions)
 	terraform.Apply(t, terraformOptions)
 
-	functionName := terraform.Output(t, terraformOptions, "ping_lambda_function_name")
+	functionName := "webping-test"
 	logger.Log(t, "invoking lambda function")
 	aws.InvokeFunction(t, "us-west-1", functionName, map[string]interface{}{})
 	logger.Log(t, "successfully invoked lambda function")
@@ -64,7 +64,7 @@ func TestWebping(t *testing.T) {
 	logger.Log(t, "creating sqs queue")
 	sqsQueueName := "webping-test-queue"
 	sqsQueueArn := fmt.Sprintf("arn:aws:sqs:%s:%s:%s", "us-west-1", aws.GetAccountId(t), sqsQueueName)
-	snsTopicArn := terraform.Output(t, terraformOptions, "sns_topic_arn")
+	snsTopicArn := "arn:aws:sns:us-west-1:996879208861:webping-test"
 	sqsQueuePolicy := fmt.Sprintf(`{
   "Version": "2012-10-17",
   "Id": "QueuePolicy",
