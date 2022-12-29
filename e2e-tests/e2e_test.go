@@ -47,6 +47,8 @@ func TestWebping(t *testing.T) {
 	terraform.WorkspaceSelectOrNew(t, terraformOptions, "test")
 	defer terraform.Destroy(t, terraformOptions)
 	terraform.Apply(t, terraformOptions)
+	logger.Log(t, "waiting to allow all changes to take effect")
+	time.Sleep(10 * time.Second)
 
 	functionName := "webping-test"
 	logger.Log(t, "invoking lambda function")
