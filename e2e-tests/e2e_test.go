@@ -43,9 +43,10 @@ func TestWebping(t *testing.T) {
 		},
 	})
 
+	terraform.Init(t, terraformOptions)
 	terraform.WorkspaceSelectOrNew(t, terraformOptions, "test")
 	defer terraform.Destroy(t, terraformOptions)
-	terraform.InitAndApply(t, terraformOptions)
+	terraform.Apply(t, terraformOptions)
 
 	functionName := terraform.Output(t, terraformOptions, "ping_lambda_function_name")
 	logger.Log(t, "invoking lambda function")
