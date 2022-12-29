@@ -1,4 +1,4 @@
-package e2e_tests
+package tests
 
 import (
 	"os"

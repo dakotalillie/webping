@@ -80,8 +80,8 @@ resource "aws_iam_role_policy" "ping_lambda" {
 
 data "archive_file" "ping_source" {
   type        = "zip"
-  source_file = "../lambda/ping/webping"
-  output_path = "webping.zip"
+  source_file = "../cmd/ping/ping"
+  output_path = "ping.zip"
 }
 
 resource "aws_lambda_function" "ping" {
@@ -89,7 +89,7 @@ resource "aws_lambda_function" "ping" {
 
   filename         = data.archive_file.ping_source.output_path
   function_name    = local.lambda_function_name
-  handler          = "webping"
+  handler          = "ping"
   role             = aws_iam_role.ping_lambda.arn
   runtime          = "go1.x"
   source_code_hash = data.archive_file.ping_source.output_base64sha256
