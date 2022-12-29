@@ -18,4 +18,4 @@ else
   terraform workspace select "$stack"
 fi
 
-terraform apply -var-file "$stack.tfvars"
+terraform apply -auto-approve -var-file "$stack.tfvars"
