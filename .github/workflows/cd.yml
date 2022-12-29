@@ -5,8 +5,10 @@ on:
 jobs:
   validate:
     uses: ./.github/workflows/validate.yml
+    secrets: inherit
   deploy-to-prod:
     needs: validate
     uses: ./.github/workflows/deploy.yml
     with:
       stack: prod
+    secrets: inherit
