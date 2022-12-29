@@ -1,5 +1,5 @@
 .idea
-local.tfvars
+dev.tfvars
 terraform/.terraform
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
