@@ -1,0 +1,8 @@
+name: cd
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+    secrets: inherit
