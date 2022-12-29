@@ -7,6 +7,21 @@ import (
 )
 
 func TestHasTransitionedIntoErrorState(t *testing.T) {
+	t.Run("not enough records", func(t *testing.T) {
+		records := make([]PingRecord, 0)
+		actual := HasTransitionedIntoErrorState(records)
+		assert.Equal(t, false, actual)
+	})
+
+	t.Run("enough records, no successes", func(t *testing.T) {
+		records := []PingRecord{
+			{Result: "FAIL"},
+			{Result: "FAIL"},
+		}
+		actual := HasTransitionedIntoErrorState(records)
+		assert.Equal(t, true, actual)
+	})
+
 	t.Run("not enough failures", func(t *testing.T) {
 		records := []PingRecord{
 			{Result: "FAIL"},

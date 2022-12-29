@@ -27,11 +27,14 @@ func HandleRequest(context.Context, any) error {
 			if err != nil {
 				return err
 			}
+			log.Printf("previous records for %s: %+v\n", record.Endpoint, prevRecords)
 			if HasTransitionedIntoErrorState(prevRecords) {
 				err = PublishToSNS(record)
 				if err != nil {
 					return err
 				}
+			} else {
+				log.Println("skipping publish to sns")
 			}
 		}
 	}

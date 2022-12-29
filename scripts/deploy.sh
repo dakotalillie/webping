@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-cd lambda/ping || exit
-GOARCH=amd64 GOOS=linux go build -o webping .
-
-cd ../../terraform || exit
+cd terraform || exit 1
 terraform workspace select dev
 terraform apply -var-file local.tfvars

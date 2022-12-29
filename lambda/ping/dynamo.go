@@ -50,7 +50,7 @@ func GetPreviousRecords(endpoint string) ([]PingRecord, error) {
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":endpoint": &types.AttributeValueMemberS{Value: endpoint},
 		},
-		Limit:            aws.Int32(3),
+		Limit:            aws.Int32(ErrorStateThreshold),
 		ScanIndexForward: aws.Bool(false), // Descending order
 	})
 	if err != nil {
