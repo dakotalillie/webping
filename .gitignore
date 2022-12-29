@@ -3,5 +3,5 @@ dev.tfvars
 terraform/.terraform
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
-webping
-webping.zip
+ping
+ping.zip

@@ -12,6 +12,8 @@ echo "deploying $stack stack"
 
 cd terraform || exit 1
 
+terraform init -input=false
+
 if ! terraform workspace list | grep "$stack" > /dev/null; then
   terraform workspace new "$stack"
 else

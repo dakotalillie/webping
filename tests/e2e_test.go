@@ -1,4 +1,4 @@
-package e2e_tests
+package tests
 
 import (
 	"fmt"
@@ -47,8 +47,10 @@ func TestWebping(t *testing.T) {
 	terraform.WorkspaceSelectOrNew(t, terraformOptions, "test")
 	defer terraform.Destroy(t, terraformOptions)
 	terraform.Apply(t, terraformOptions)
+	logger.Log(t, "waiting to allow all changes to take effect")
+	time.Sleep(10 * time.Second)
 
-	functionName := "webping-test"
+	functionName := terraform.Output(t, terraformOptions, "ping_lambda_function_name")
 	logger.Log(t, "invoking lambda function")
 	aws.InvokeFunction(t, "us-west-1", functionName, map[string]interface{}{})
 	logger.Log(t, "successfully invoked lambda function")
@@ -64,26 +66,26 @@ func TestWebping(t *testing.T) {
 	logger.Log(t, "creating sqs queue")
 	sqsQueueName := "webping-test-queue"
 	sqsQueueArn := fmt.Sprintf("arn:aws:sqs:%s:%s:%s", "us-west-1", aws.GetAccountId(t), sqsQueueName)
-	snsTopicArn := "arn:aws:sns:us-west-1:996879208861:webping-test"
+	snsTopicArn := terraform.Output(t, terraformOptions, "sns_topic_arn")
 	sqsQueuePolicy := fmt.Sprintf(`{
-  "Version": "2012-10-17",
-  "Id": "QueuePolicy",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "sns.amazonaws.com"
-      },
-      "Action": "sqs:SendMessage",
-      "Resource": "%s",
-      "Condition": {
-        "ArnEquals": {
-          "aws:SourceArn": "%s"
-        }
-      }
-    }
-  ]
-}`, sqsQueueArn, snsTopicArn)
+	 "Version": "2012-10-17",
+	 "Id": "QueuePolicy",
+	 "Statement": [
+	   {
+	     "Effect": "Allow",
+	     "Principal": {
+	       "Service": "sns.amazonaws.com"
+	     },
+	     "Action": "sqs:SendMessage",
+	     "Resource": "%s",
+	     "Condition": {
+	       "ArnEquals": {
+	         "aws:SourceArn": "%s"
+	       }
+	     }
+	   }
+	 ]
+	}`, sqsQueueArn, snsTopicArn)
 	sqsQueueOut, err := sqsClient.CreateQueue(&sqs.CreateQueueInput{
 		QueueName: &sqsQueueName,
 		Attributes: map[string]*string{
