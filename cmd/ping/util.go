@@ -25,9 +25,5 @@ func HasTransitionedIntoErrorState(prevRecords []PingRecord) bool {
 		}
 	}
 
-	if prevRecords[len(prevRecords)-1].Result != "PASS" {
-		return false
-	}
-
-	return true
+	return prevRecords[len(prevRecords)-1].Result == "PASS"
 }

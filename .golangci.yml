@@ -1,0 +1,5 @@
+linters:
+  disable:
+    - contextcheck
+  presets:
+    - bugs
