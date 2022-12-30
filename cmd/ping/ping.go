@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"sync"
@@ -18,17 +19,27 @@ var httpClient = http.Client{Timeout: 10 * time.Second}
 
 func PingSingleEndpoint(endpoint string) PingRecord {
 	log.Println("sending request to", endpoint)
-	resp, err := httpClient.Get(endpoint)
-
 	now := time.Now()
 	expiration := now.Add(24 * time.Hour)
 	record := PingRecord{Endpoint: endpoint, ExpirationTime: expiration.Unix(), Timestamp: now.Unix()}
+
+	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, endpoint, nil)
+	if err != nil {
+		log.Printf("received error while creating request for %s: %s\n", endpoint, err)
+		record.Result = "FAIL"
+		return record
+	}
+
+	resp, err := httpClient.Do(req)
 
 	if err != nil {
 		log.Printf("received error while sending request to %s: %s\n", endpoint, err)
 		record.Result = "FAIL"
 	} else if resp.StatusCode >= 400 {
 		log.Printf("received error status code from request to %s: %d\n", endpoint, resp.StatusCode)
+		record.Result = "FAIL"
+	} else if err = resp.Body.Close(); err != nil {
+		log.Printf("failed to close response body from request to %s: %s\n", endpoint, err)
 		record.Result = "FAIL"
 	} else {
 		log.Println("received successful response from", endpoint)
