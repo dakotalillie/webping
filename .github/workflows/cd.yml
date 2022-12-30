@@ -6,7 +6,7 @@ jobs:
   validate:
     uses: ./.github/workflows/validate.yml
     secrets: inherit
-  deploy-to-prod:
+  prod:
     needs: validate
     uses: ./.github/workflows/deploy.yml
     with:

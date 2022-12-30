@@ -24,7 +24,7 @@ func TestWebping(t *testing.T) {
 	}
 	rootDir := filepath.Dir(cwd)
 
-	cmd := exec.Command("scripts/build.sh")
+	cmd := exec.Command("scripts/build.sh", "test")
 	cmd.Dir = rootDir
 	out, err := cmd.CombinedOutput()
 	if err != nil {

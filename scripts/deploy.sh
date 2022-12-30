@@ -8,8 +8,6 @@ fi
 
 echo "deploying $stack stack"
 
-./scripts/build.sh
-
 cd terraform || exit 1
 
 terraform init -input=false
