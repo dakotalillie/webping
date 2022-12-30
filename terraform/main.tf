@@ -40,8 +40,7 @@ locals {
 }
 
 resource "aws_iam_role" "ping_lambda" {
-  managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
-  name                = "webping-${var.stack_name}-lambda"
+  name = "webping-${var.stack_name}-lambda"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -73,6 +72,11 @@ resource "aws_iam_role_policy" "ping_lambda" {
         Action   = "sns:Publish"
         Effect   = "Allow"
         Resource = aws_sns_topic.ping_notification.arn
+      },
+      {
+        Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+        Effect   = "Allow"
+        Resource = aws_cloudwatch_log_group.ping.arn
       }
     ]
   })
