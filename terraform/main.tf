@@ -82,21 +82,21 @@ resource "aws_iam_role_policy" "ping_lambda" {
   })
 }
 
-data "archive_file" "ping_source" {
+data "archive_file" "ping_binary" {
   type        = "zip"
-  source_file = "../cmd/ping/ping"
+  source_file = "../bin/ping"
   output_path = "ping.zip"
 }
 
 resource "aws_lambda_function" "ping" {
   depends_on = [aws_cloudwatch_log_group.ping]
 
-  filename         = data.archive_file.ping_source.output_path
+  filename         = data.archive_file.ping_binary.output_path
   function_name    = local.lambda_function_name
   handler          = "ping"
   role             = aws_iam_role.ping_lambda.arn
   runtime          = "go1.x"
-  source_code_hash = data.archive_file.ping_source.output_base64sha256
+  source_code_hash = data.archive_file.ping_binary.output_base64sha256
 
   environment {
     variables = {

@@ -1,4 +1,5 @@
 .idea
+bin
 dev.tfvars
 terraform/.terraform
 terraform/terraform.tfstate
