@@ -2,10 +2,6 @@ terraform {
   required_version = "~> 1.3"
 
   required_providers {
-    archive = {
-      source  = "hashicorp/archive"
-      version = "~> 2.2"
-    }
     aws = {
       source  = "hashicorp/aws"
       version = "~> 4.48"
@@ -29,38 +25,35 @@ provider "aws" {
       Environment = var.environment
       ManagedBy   = "Terraform"
       Project     = "Webping"
-      Source      = "github.com/dakotalillie/webping"
+      Source      = "github.com/dakotalillie/webping-infra"
       Stack       = var.stack_name
     }
   }
 }
 
+data "aws_caller_identity" "current" {}
+
+data "aws_region" "current" {}
+
 locals {
-  lambda_function_name = "webping-${var.stack_name}"
+  account_id = data.aws_caller_identity.current.account_id
+  region     = data.aws_region.current.name
 }
 
-resource "aws_iam_role" "ping_lambda" {
-  name = "webping-${var.stack_name}-lambda"
+module "ping_lambda_function" {
+  source = "./modules/lambda"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
+  function_name = "webping-${var.stack_name}-ping"
+  handler       = "ping"
+  s3_key        = "webping/prod/ping.zip"
 
-resource "aws_iam_role_policy" "ping_lambda" {
-  name = "inline-policy"
-  role = aws_iam_role.ping_lambda.id
+  environment_variables = {
+    DB_TABLE  = aws_dynamodb_table.ping_state.name
+    ENDPOINTS = join(",", var.endpoints)
+    SNS_TOPIC = aws_sns_topic.ping_notification.arn
+  }
 
-  policy = jsonencode({
+  iam_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -73,37 +66,32 @@ resource "aws_iam_role_policy" "ping_lambda" {
         Effect   = "Allow"
         Resource = aws_sns_topic.ping_notification.arn
       },
-      {
-        Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-        Effect   = "Allow"
-        Resource = aws_cloudwatch_log_group.ping.arn
-      }
     ]
   })
 }
 
-resource "aws_lambda_function" "ping" {
-  depends_on = [aws_cloudwatch_log_group.ping]
+module "sms_lambda_function" {
+  source = "./modules/lambda"
 
-  function_name = local.lambda_function_name
-  handler       = "ping"
-  role          = aws_iam_role.ping_lambda.arn
-  runtime       = "go1.x"
-  s3_bucket     = "dakotalillie-lambda-src"
-  s3_key        = "webping/${var.stack_name}/ping.zip"
+  function_name = "webping-${var.stack_name}-sms"
+  handler       = "sms"
+  s3_key        = "webping/prod/sms.zip"
 
-  environment {
-    variables = {
-      DB_TABLE  = aws_dynamodb_table.ping_state.name
-      ENDPOINTS = join(",", var.endpoints)
-      SNS_TOPIC = aws_sns_topic.ping_notification.arn
-    }
-  }
-}
-
-resource "aws_cloudwatch_log_group" "ping" {
-  name              = "/aws/lambda/${local.lambda_function_name}"
-  retention_in_days = 7
+  iam_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = ["ssm:GetParameter", "ssm:GetParameters"]
+        Effect = "Allow"
+        Resource = [
+          "arn:aws:ssm:${local.region}:${local.account_id}:parameter/Personal/PhoneNumber",
+          "arn:aws:ssm:${local.region}:${local.account_id}:parameter/Twilio/AccountSID",
+          "arn:aws:ssm:${local.region}:${local.account_id}:parameter/Twilio/AuthToken",
+          "arn:aws:ssm:${local.region}:${local.account_id}:parameter/Twilio/PhoneNumber",
+        ]
+      }
+    ]
+  })
 }
 
 resource "aws_sns_topic" "ping_notification" {
@@ -115,6 +103,12 @@ resource "aws_sns_topic_subscription" "email" {
 
   endpoint  = var.email
   protocol  = "email"
+  topic_arn = aws_sns_topic.ping_notification.arn
+}
+
+resource "aws_sns_topic_subscription" "sms" {
+  endpoint  = module.sms_lambda_function.function_arn
+  protocol  = "lambda"
   topic_arn = aws_sns_topic.ping_notification.arn
 }
 
@@ -152,17 +146,24 @@ resource "aws_cloudwatch_event_rule" "ping_cron" {
 resource "aws_cloudwatch_event_target" "ping_cron" {
   count = var.enable_ping_cron ? 1 : 0
 
-  arn  = aws_lambda_function.ping.arn
+  arn  = module.ping_lambda_function.function_arn
   rule = aws_cloudwatch_event_rule.ping_cron[0].name
 }
 
-resource "aws_lambda_permission" "allow_cloudwatch" {
+resource "aws_lambda_permission" "allow_cloudwatch_to_trigger_ping" {
   count = var.enable_ping_cron ? 1 : 0
 
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.ping.function_name
+  function_name = module.ping_lambda_function.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.ping_cron[0].arn
   statement_id  = "AllowExecutionFromEventBridge"
 }
 
+resource "aws_lambda_permission" "allow_sns_to_trigger_sms" {
+  action        = "lambda:InvokeFunction"
+  function_name = module.sms_lambda_function.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.ping_notification.arn
+  statement_id  = "AllowExecutionFromSNS"
+}
