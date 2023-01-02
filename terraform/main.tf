@@ -150,7 +150,7 @@ resource "aws_cloudwatch_event_target" "ping_cron" {
   rule = aws_cloudwatch_event_rule.ping_cron[0].name
 }
 
-resource "aws_lambda_permission" "allow_cloudwatch_to_trigger_ping" {
+resource "aws_lambda_permission" "allow_eventbridge_to_trigger_ping" {
   count = var.enable_ping_cron ? 1 : 0
 
   action        = "lambda:InvokeFunction"
@@ -166,4 +166,23 @@ resource "aws_lambda_permission" "allow_sns_to_trigger_sms" {
   principal     = "sns.amazonaws.com"
   source_arn    = aws_sns_topic.ping_notification.arn
   statement_id  = "AllowExecutionFromSNS"
+}
+
+resource "aws_cloudwatch_event_rule" "sms_cron" {
+  name                = "webping-${var.stack_name}-sms-cron"
+  schedule_expression = "cron(0 10 ? * 2 *)" # 10AM every Monday
+}
+
+resource "aws_cloudwatch_event_target" "sms_cron" {
+  arn   = module.sms_lambda_function.function_arn
+  rule  = aws_cloudwatch_event_rule.sms_cron.name
+  input = jsonencode({ Records = [{ Sns = { Message = "This is a weekly message to keep the Twilio number alive" } }] })
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_to_trigger_sms" {
+  action        = "lambda:InvokeFunction"
+  function_name = module.sms_lambda_function.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.sms_cron.arn
+  statement_id  = "AllowExecutionFromEventBridge"
 }
