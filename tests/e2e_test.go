@@ -11,14 +11,14 @@ import (
 )
 
 func TestWebping(t *testing.T) {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load("../.env"); err != nil {
 		// This should not fail the test, because in CI, these values aren't derived from .env
 		logger.Log(t, "failed to load environment variables from .env:", err)
 	}
 
 	awsRegion := "us-west-1"
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "terraform",
+		TerraformDir: "../terraform",
 		Vars: map[string]interface{}{
 			"aws_region":       awsRegion,
 			"enable_ping_cron": false,
