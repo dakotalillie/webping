@@ -1,8 +1,5 @@
+.env
 .idea
-bin
 dev.tfvars
-terraform/.terraform
-terraform/terraform.tfstate
-terraform/terraform.tfstate.backup
-ping
-ping.zip
+.terraform
+terraform.tfstate*
