@@ -170,7 +170,7 @@ resource "aws_lambda_permission" "allow_sns_to_trigger_sms" {
 
 resource "aws_cloudwatch_event_rule" "sms_cron" {
   name                = "webping-${var.stack_name}-sms-cron"
-  schedule_expression = "cron(0 10 ? * 2 *)" # 10AM every Monday
+  schedule_expression = "cron(0 18 ? * 2 *)" # 6PM UTC every Monday
 }
 
 resource "aws_cloudwatch_event_target" "sms_cron" {
